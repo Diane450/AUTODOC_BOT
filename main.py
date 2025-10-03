@@ -1,5 +1,6 @@
 from aiogram import Dispatcher, Bot, types
 from app.main_router import main_router
+from app.generate_document_router import generate_document_router
 from aiogram.types import BotCommandScopeDefault
 import config
 import asyncio
@@ -9,6 +10,7 @@ bot = Bot(config.TG_TOKEN)
 async def main():
     await set_commands()
     dp = Dispatcher()
+    main_router.include_router(generate_document_router)
     dp.include_router(main_router)
     await dp.start_polling(bot)
 
