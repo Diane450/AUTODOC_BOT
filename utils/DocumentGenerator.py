@@ -5,28 +5,24 @@ from docx import Document
 import datetime
 import zipfile
 import os
+import shutil
 
 class DocumentGenerator:
     def generate_document(self, template_path: str, data_path: str, output_type: str):
-        # Создаём временную папку, если её нет
         os.makedirs("temp", exist_ok=True)
 
-        # Открываем Excel с вычисленными значениями формул
         workbook = load_workbook(data_path, data_only=True)
         sheet = workbook.active
 
-        # Считываем заголовки
         headers = [cell.value for cell in sheet[1]]
         temp_files = []
 
-        # Проходим по строкам данных
         for row in sheet.iter_rows(min_row=2):
             clean_row = []
 
             for cell in row:
                 value = cell.value
 
-                # Обработка дат и времени
                 if isinstance(value, datetime.datetime):
                     fmt = str(cell.number_format).lower()
 
@@ -87,3 +83,8 @@ class DocumentGenerator:
         else:
             print("❌ Неизвестный тип вывода. Используйте 'zip' или 'single'.")
             return None
+
+    def delete_documents(self, folder_path="temp"):
+        if os.path.exists(folder_path):
+            shutil.rmtree(folder_path)
+            print("✅Временные файлы удалены✅")

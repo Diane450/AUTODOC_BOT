@@ -69,6 +69,7 @@ async def choose_zip(callback: CallbackQuery, state: FSMContext):
     output_type = data["output_type"]
     file_path = document_generator.generate_document(template_path, user_data_file, output_type)
     await callback.message.answer_document(FSInputFile(file_path))
+    document_generator.delete_documents("temp")
     await state.clear()
 
 
@@ -82,8 +83,8 @@ async def choose_single(callback: CallbackQuery, state: FSMContext):
     template_path = data["template"]
     user_data_file = data["user_data_file"]
     output_type = data["output_type"]
-    document_generator.generate_document(template_path, user_data_file, output_type)
     
     file_path = document_generator.generate_document(template_path, user_data_file, output_type)
     await callback.message.answer_document(FSInputFile(file_path))
+    document_generator.delete_documents("temp")
     await state.clear()
