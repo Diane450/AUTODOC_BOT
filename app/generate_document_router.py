@@ -5,7 +5,6 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from keyboards.zip_or_document_keyboard import zip_or_document_keyboard
 from utils.DocumentUtils import DocumentUtils
-from urllib.parse import urlparse
 from utils.DirectoryUtils import DirectoryUtils
 from utils.ValidateUtils import ValidateUtils
 from utils.BotUtils import BotUtils

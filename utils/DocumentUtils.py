@@ -3,69 +3,28 @@ from docxtpl import DocxTemplate
 from docxcompose.composer import Composer
 from docx import Document
 from aiogram.types import Document as Doc
+from aiogram import Bot
+from utils.SpreadSheetUtils import SpreadSheetUtils
+from utils.ExcelUtils import ExcelUtils
 import pandas as pd
 import datetime
 import zipfile
 import os
-import shutil
-from aiogram import Bot
+
+spreadsheet_utils = SpreadSheetUtils()
+excel_utils = ExcelUtils()
 
 class DocumentUtils:
 
     def _load_data(self, data_path: str):
-        """Загружает данные из Excel или Google Sheets и корректно обрабатывает даты/время"""
+        
         if "docs.google.com/spreadsheets" in data_path:
-            sheet_id = data_path.split("/d/")[1].split("/")[0]
-            csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv"
-            df = pd.read_csv(csv_url)
-            headers = list(df.columns)
-            rows = df.values.tolist()
-
-            # Преобразуем даты/время в строки
-            clean_rows = []
-            for row in rows:
-                clean_row = []
-                for value in row:
-                    if isinstance(value, str):
-                        clean_row.append(value)
-                    elif pd.isna(value):
-                        clean_row.append("")
-                    elif isinstance(value, (datetime.date, datetime.datetime)):
-                        # Если есть время
-                        if isinstance(value, datetime.datetime):
-                            clean_row.append(value.strftime("%d.%m.%Y %H:%M"))
-                        else:
-                            clean_row.append(value.strftime("%d.%m.%Y"))
-                    else:
-                        clean_row.append(value)
-                clean_rows.append(clean_row)
-            rows = clean_rows
-
+            headers, rows = spreadsheet_utils.load_data(data_path)
         else:
-            workbook = load_workbook(data_path, data_only=True)
-            sheet = workbook.active
-            headers = [cell.value for cell in sheet[1]]
-            rows = []
-            for row in sheet.iter_rows(min_row=2):
-                clean_row = []
-                for cell in row:
-                    value = cell.value
-                    if isinstance(value, datetime.datetime):
-                        fmt = str(cell.number_format).lower()
-                        if "h" in fmt or "ч" in fmt:
-                            value = value.strftime("%d.%m.%Y %H:%M")
-                        else:
-                            value = value.strftime("%d.%m.%Y")
-                    elif isinstance(value, datetime.date):
-                        value = value.strftime("%d.%m.%Y")
-                    clean_row.append(value)
-                rows.append(clean_row)
-
+            headers, rows = excel_utils.load_data(data_path)
         return headers, rows
 
     def generate_document(self, template_path: str, data_path: str, output_type: str):
-        os.makedirs("temp", exist_ok=True)
-
         headers, rows = self._load_data(data_path)
         temp_files = []
 
