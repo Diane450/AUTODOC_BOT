@@ -7,6 +7,7 @@ from keyboards.zip_or_document_keyboard import zip_or_document_keyboard
 from utils.DocumentGenerator import DocumentGenerator
 import os
 import datetime
+from urllib.parse import urlparse
 
 generate_document_router = Router()
 document_generator = DocumentGenerator()
@@ -41,20 +42,34 @@ async def get_template(message:Message, state:FSMContext, bot:Bot):
 
 
 @generate_document_router.message(DocumentGeneration.user_data_file, F.document)
-async def get_user_data_file(message:Message, state:FSMContext, bot:Bot):
+async def get_user_data_file_doc(message: Message, state: FSMContext):
     doc = message.document
-    file = await bot.get_file(doc.file_id)
-
     os.makedirs("temp", exist_ok=True)
 
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    ts = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    safe_name = f"{ts}_{doc.file_name}"
+    path = os.path.join("temp", safe_name)
 
-    file_path = f"temp/{timestamp} - {doc.file_name}"
-    await bot.download_file(file.file_path, file_path)
+    file = await message.bot.get_file(doc.file_id)
+    await message.bot.download_file(file.file_path, path)
 
-    await state.update_data(user_data_file=file_path)
+    await state.update_data(user_data_file=path)
+    await message.answer("✅ Данные (Excel) получены!\nВ каком виде прислать результат?", reply_markup=zip_or_document_keyboard)
 
-    await message.answer("✅ Информация получена!\nВ каком виде вы хотите получить данные:", reply_markup=zip_or_document_keyboard)
+
+@generate_document_router.message(DocumentGeneration.user_data_file, F.text)
+async def get_user_data_file_link(message: Message, state: FSMContext):
+    text = message.text.strip()
+    if not text.lower().startswith(("http://", "https://")):
+        await message.answer("Это не ссылка. Пришли файл .xlsx или ссылку на Google Sheets.")
+        return
+
+    if not looks_like_gsheets(text):
+        await message.answer("Поддерживаемые ссылки: Google Sheets (docs.google.com/spreadsheets/...) или прямая ссылка на .xlsx.")
+        return
+
+    await state.update_data(user_data_file=text)
+    await message.answer("✅ Ссылка принята!\nВ каком виде прислать результат?", reply_markup=zip_or_document_keyboard)
 
 
 @generate_document_router.callback_query(F.data == "output_zip")
@@ -88,3 +103,12 @@ async def choose_single(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer_document(FSInputFile(file_path))
     document_generator.delete_documents("temp")
     await state.clear()
+
+
+def looks_like_gsheets(url: str) -> bool:
+    if "docs.google.com/spreadsheets" in url:
+        return True
+    parsed = urlparse(url)
+    if parsed.scheme in ("http", "https") and parsed.path.lower().endswith(".xlsx"):
+        return True
+    return False
