@@ -4,111 +4,81 @@ from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from keyboards.zip_or_document_keyboard import zip_or_document_keyboard
-from utils.DocumentGenerator import DocumentGenerator
-import os
-import datetime
+from utils.DocumentUtils import DocumentUtils
 from urllib.parse import urlparse
+from utils.DirectoryUtils import DirectoryUtils
+from utils.ValidateUtils import ValidateUtils
+from utils.BotUtils import BotUtils
+
 
 generate_document_router = Router()
-document_generator = DocumentGenerator()
+document_utils = DocumentUtils()
+directory_utils = DirectoryUtils()
+validate_utils = ValidateUtils()
+bot_utils = BotUtils()
 
 class DocumentGeneration(StatesGroup):
-    template = State()
-    user_data_file = State()
+    template_path = State()
+    user_data_file_path = State()
     output_type = State()
 
 @generate_document_router.message(Command("generate"))
 async def get_user_pattern(message:Message, state:FSMContext):
     await message.answer("Пришли шаблон документа (.docx)")
-    await state.set_state(DocumentGeneration.template)
+    await state.set_state(DocumentGeneration.template_path)
+    directory_utils.create_folder()
 
 
-@generate_document_router.message(DocumentGeneration.template, F.document)
-async def get_template(message:Message, state:FSMContext, bot:Bot):    
+@generate_document_router.message(DocumentGeneration.template_path, F.document)
+async def get_template_path(message:Message, state:FSMContext, bot:Bot):    
     doc = message.document
-    file = await bot.get_file(doc.file_id)
-    
-    os.makedirs("temp", exist_ok=True)
 
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    temp_file_path = await document_utils.download_file(bot, doc)
 
-    file_path = f"temp/{timestamp} - {doc.file_name}"
-    await bot.download_file(file.file_path, file_path)
-
-    await state.update_data(template=file_path)
-
+    await state.update_data(template_path=temp_file_path)
     await message.answer("✅ Шаблон получен!\nТеперь пришли Excel (.xlsx) или ссылку на Google Sheets.")
-    await state.set_state(DocumentGeneration.user_data_file)
+    await state.set_state(DocumentGeneration.user_data_file_path)
 
 
-@generate_document_router.message(DocumentGeneration.user_data_file, F.document)
-async def get_user_data_file_doc(message: Message, state: FSMContext):
+@generate_document_router.message(DocumentGeneration.user_data_file_path, F.document)
+async def get_user_data_file_path_doc(message: Message, state: FSMContext, bot:Bot):
     doc = message.document
-    os.makedirs("temp", exist_ok=True)
 
-    ts = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    safe_name = f"{ts}_{doc.file_name}"
-    path = os.path.join("temp", safe_name)
+    temp_file_path = await document_utils.download_file(bot, doc)
 
-    file = await message.bot.get_file(doc.file_id)
-    await message.bot.download_file(file.file_path, path)
-
-    await state.update_data(user_data_file=path)
+    await state.update_data(user_data_file_path=temp_file_path)
     await message.answer("✅ Данные (Excel) получены!\nВ каком виде прислать результат?", reply_markup=zip_or_document_keyboard)
 
 
-@generate_document_router.message(DocumentGeneration.user_data_file, F.text)
-async def get_user_data_file_link(message: Message, state: FSMContext):
+@generate_document_router.message(DocumentGeneration.user_data_file_path, F.text)
+async def get_user_data_file_path_link(message: Message, state: FSMContext):
     text = message.text.strip()
-    if not text.lower().startswith(("http://", "https://")):
-        await message.answer("Это не ссылка. Пришли файл .xlsx или ссылку на Google Sheets.")
-        return
 
-    if not looks_like_gsheets(text):
+    if not validate_utils.looks_like_gsheets(text):
         await message.answer("Поддерживаемые ссылки: Google Sheets (docs.google.com/spreadsheets/...) или прямая ссылка на .xlsx.")
         return
 
-    await state.update_data(user_data_file=text)
+    await state.update_data(user_data_file_path=text)
     await message.answer("✅ Ссылка принята!\nВ каком виде прислать результат?", reply_markup=zip_or_document_keyboard)
 
 
-@generate_document_router.callback_query(F.data == "output_zip")
+@generate_document_router.callback_query(F.data.in_(["output_zip", "output_single"]))
 async def choose_zip(callback: CallbackQuery, state: FSMContext):
-    await state.update_data(output_type="zip")
-    await callback.answer("Ваши документы будут присланы в ZIP архиве")
-
-    data = await state.get_data()
-
-    template_path = data["template"]
-    user_data_file = data["user_data_file"]
-    output_type = data["output_type"]
-    file_path = document_generator.generate_document(template_path, user_data_file, output_type)
-    await callback.message.answer_document(FSInputFile(file_path))
-    document_generator.delete_documents("temp")
-    await state.clear()
-
-
-@generate_document_router.callback_query(F.data == "output_single")
-async def choose_single(callback: CallbackQuery, state: FSMContext):
-    await state.update_data(output_type="single")
-    await callback.answer("Ваши документы будут присланы в едином файле")
-
-    data = await state.get_data()
-
-    template_path = data["template"]
-    user_data_file = data["user_data_file"]
-    output_type = data["output_type"]
     
-    file_path = document_generator.generate_document(template_path, user_data_file, output_type)
+    output_type = callback.data.removeprefix("output_")
+    await state.update_data(output_type=output_type)
+
+    text = bot_utils.get_text_for_output_type(output_type)
+    await callback.answer(text)
+
+    data = await state.get_data()
+
+    template_path = data["template_path"]
+    user_data_file_path = data["user_data_file_path"]
+
+    file_path = document_utils.generate_document(template_path,user_data_file_path, output_type)
+    
     await callback.message.answer_document(FSInputFile(file_path))
-    document_generator.delete_documents("temp")
+    
+    directory_utils.remove_temp_files()
     await state.clear()
-
-
-def looks_like_gsheets(url: str) -> bool:
-    if "docs.google.com/spreadsheets" in url:
-        return True
-    parsed = urlparse(url)
-    if parsed.scheme in ("http", "https") and parsed.path.lower().endswith(".xlsx"):
-        return True
-    return False
