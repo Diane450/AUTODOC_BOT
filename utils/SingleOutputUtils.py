@@ -1,6 +1,7 @@
 import datetime
 from docxcompose.composer import Composer
 from docx import Document
+from utils.Logger import logger
 
 class SingleOutputUtils:
     def create_single_output_type(self, temp_files:list):
@@ -11,6 +12,7 @@ class SingleOutputUtils:
         composer = self.append_files(temp_files, composer)
         
         composer.save(combined_filename)
+        logger.info(f"File {combined_filename} has been created")
         return combined_filename
     
 

@@ -1,6 +1,7 @@
 import datetime
 import zipfile
 import os
+from utils.Logger import logger
 class ZipUtils:
         
     def create_zip(self, temp_files:list):
@@ -8,6 +9,7 @@ class ZipUtils:
         with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
             for file in temp_files:
                 zipf.write(file, os.path.basename(file))
+        logger.info(f"ZIP {zip_filename} has been created")
         return zip_filename
     
 

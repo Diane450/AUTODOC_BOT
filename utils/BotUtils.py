@@ -1,6 +1,7 @@
 from aiogram.types import Document as Doc
 from aiogram import Bot
 import datetime
+from utils.Logger import logger
 
 class BotUtils:
     
@@ -12,10 +13,14 @@ class BotUtils:
     
 
     async def download_file(self, bot: Bot, doc: Doc):
-        file = await bot.get_file(doc.file_id)
-        temp_file_path = self.create_temp_path_users_documents(doc)
-        await bot.download_file(file.file_path, temp_file_path)
-        return temp_file_path
+        try:
+            file = await bot.get_file(doc.file_id)
+            temp_file_path = self.create_temp_path_users_documents(doc)
+            await bot.download_file(file.file_path, temp_file_path)
+            logger.info(f"Download file {file.file_path} to {temp_file_path} successfully")
+            return temp_file_path
+        except Exception as e:
+            logger.exception(f"Exception in download_file: {e}")
     
 
     def create_temp_path_users_documents(self, doc: Doc):

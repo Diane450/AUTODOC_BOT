@@ -1,5 +1,6 @@
 import pandas as pd
 from pandas import DataFrame
+from utils.Logger import logger
 
 from utils.DateTimeUtils import DateTimeUtils
 
@@ -29,6 +30,7 @@ class SpreadSheetUtils:
     def get_headers(self, df:DataFrame):
         return list(df.columns)
 
+
     def get_rows(self, df:DataFrame):
         return df.values.tolist()
 
@@ -36,4 +38,5 @@ class SpreadSheetUtils:
     def get_csv_url(self, data_path):
         sheet_id = data_path.split("/d/")[1].split("/")[0]
         csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv"
+        logger.info(f"Got csv url from link")
         return csv_url
