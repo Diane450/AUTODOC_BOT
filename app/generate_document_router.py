@@ -4,14 +4,14 @@ from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from keyboards.zip_or_document_keyboard import zip_or_document_keyboard
-from utils.DocumentUtils import DocumentUtils
+from utils.OuputUtils import OutputUtils
 from utils.DirectoryUtils import DirectoryUtils
 from utils.ValidateUtils import ValidateUtils
 from utils.BotUtils import BotUtils
 
 
 generate_document_router = Router()
-document_utils = DocumentUtils()
+document_utils = OutputUtils()
 directory_utils = DirectoryUtils()
 validate_utils = ValidateUtils()
 bot_utils = BotUtils()
@@ -32,7 +32,7 @@ async def get_user_pattern(message:Message, state:FSMContext):
 async def get_template_path(message:Message, state:FSMContext, bot:Bot):    
     doc = message.document
 
-    temp_file_path = await document_utils.download_file(bot, doc)
+    temp_file_path = await bot_utils.download_file(bot, doc)
 
     await state.update_data(template_path=temp_file_path)
     await message.answer("✅ Шаблон получен!\nТеперь пришли Excel (.xlsx) или ссылку на Google Sheets.")
@@ -43,7 +43,7 @@ async def get_template_path(message:Message, state:FSMContext, bot:Bot):
 async def get_user_data_file_path_doc(message: Message, state: FSMContext, bot:Bot):
     doc = message.document
 
-    temp_file_path = await document_utils.download_file(bot, doc)
+    temp_file_path = await bot_utils.download_file(bot, doc)
 
     await state.update_data(user_data_file_path=temp_file_path)
     await message.answer("✅ Данные (Excel) получены!\nВ каком виде прислать результат?", reply_markup=zip_or_document_keyboard)
@@ -75,7 +75,7 @@ async def choose_zip(callback: CallbackQuery, state: FSMContext):
     template_path = data["template_path"]
     user_data_file_path = data["user_data_file_path"]
 
-    file_path = document_utils.generate_document(template_path,user_data_file_path, output_type)
+    file_path = document_utils.generate_output(template_path,user_data_file_path, output_type)
     
     await callback.message.answer_document(FSInputFile(file_path))
     
