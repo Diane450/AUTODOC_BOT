@@ -2,10 +2,11 @@ from aiogram import Dispatcher, Bot, types
 from app.main_router import main_router
 from app.generate_document_router import generate_document_router
 from aiogram.types import BotCommandScopeDefault
-import config
-import asyncio
 from middlewares.ErrorHandlerMiddleware import ErrorHandlerMiddleware
 from middlewares.UserInfoMiddleware import UserInfoMiddleware
+from utils.CleanUpUtils import clean_old_temp_files
+import config
+import asyncio
 
 bot = Bot(config.TG_TOKEN)
 
@@ -16,6 +17,7 @@ async def main():
     dp.update.middleware(UserInfoMiddleware())
     main_router.include_router(generate_document_router)
     dp.include_router(main_router)
+    asyncio.create_task(clean_old_temp_files())
     await dp.start_polling(bot)
 
 async def set_commands():
