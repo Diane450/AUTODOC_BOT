@@ -1,3 +1,4 @@
+from aiogram.types import Document
 from urllib.parse import urlparse
 
 class ValidateUtils:
@@ -9,3 +10,7 @@ class ValidateUtils:
         if parsed.scheme in ("http", "https") and parsed.path.lower().endswith(".xlsx"):
             return True
         return False
+    
+
+    def is_docx(self, doc:Document):
+        return doc.file_name.lower().endswith(".docx")

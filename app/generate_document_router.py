@@ -21,9 +21,10 @@ class DocumentGeneration(StatesGroup):
     user_data_file_path = State()
     output_type = State()
 
+
 @generate_document_router.message(Command("generate"))
 async def get_user_pattern(message:Message, state:FSMContext):
-    await message.answer("Пришли шаблон документа (.docx)")
+    await message.answer("Пришлите шаблон документа (.docx)")
     await state.set_state(DocumentGeneration.template_path)
     directory_utils.create_folder()
 
@@ -31,12 +32,14 @@ async def get_user_pattern(message:Message, state:FSMContext):
 @generate_document_router.message(DocumentGeneration.template_path, F.document)
 async def get_template_path(message:Message, state:FSMContext, bot:Bot):    
     doc = message.document
-
-    temp_file_path = await bot_utils.download_file(bot, doc)
-
-    await state.update_data(template_path=temp_file_path)
-    await message.answer("✅ Шаблон получен!\nТеперь пришли Excel (.xlsx) или ссылку на Google Sheets.")
-    await state.set_state(DocumentGeneration.user_data_file_path)
+    
+    if not validate_utils.is_docx(doc):
+        await message.answer("❌Вы отправили некорректный шаблон. Отправьте шаблон в формате docx❌")
+    else:
+        temp_file_path = await bot_utils.download_file(bot, doc)
+        await state.update_data(template_path=temp_file_path)
+        await message.answer("✅ Шаблон получен!\nТеперь пришли Excel (.xlsx) или ссылку на Google Sheets.")
+        await state.set_state(DocumentGeneration.user_data_file_path)
 
 
 @generate_document_router.message(DocumentGeneration.user_data_file_path, F.document)
@@ -54,7 +57,7 @@ async def get_user_data_file_path_link(message: Message, state: FSMContext):
     text = message.text.strip()
 
     if not validate_utils.looks_like_gsheets(text):
-        await message.answer("Поддерживаемые ссылки: Google Sheets (docs.google.com/spreadsheets/...) или прямая ссылка на .xlsx.")
+        await message.answer("⚠️Поддерживаемые ссылки: Google Sheets (docs.google.com/spreadsheets/...) или прямая ссылка на .xlsx.⚠️")
         return
 
     await state.update_data(user_data_file_path=text)
