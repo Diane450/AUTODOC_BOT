@@ -1,0 +1,47 @@
+name: Deploy to AlwaysData
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13.2"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Prepare clean deploy folder
+        run: |
+          # Создаем временную папку для деплоя
+          mkdir deploy
+          # Копируем проект, исключая ненужные файлы
+          rsync -av --exclude='.git*' \
+                    --exclude='.github*' \
+                    --exclude='.venv*' \
+                    --exclude='__pycache__*' \
+                    ./ deploy/
+
+      - name: Deploy via SFTP
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          server: ${{ secrets.ALWAYSDATA_HOST }}
+          username: ${{ secrets.ALWAYSDATA_USER }}
+          password: ${{ secrets.ALWAYSDATA_PASSWORD }}
+          port: ${{ secrets.ALWAYSDATA_PORT }}
+          local_path: "./deploy"
+          remote_path: "/home/${{ secrets.ALWAYSDATA_USER }}/www/bot"
+          sftp_only: true
+          delete_remote_files: false
