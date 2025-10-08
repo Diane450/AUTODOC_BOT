@@ -7,8 +7,9 @@ from middlewares.UserInfoMiddleware import UserInfoMiddleware
 from utils.CleanUpUtils import clean_old_temp_files
 import config
 import asyncio
+import os
 
-bot = Bot(config.TG_TOKEN)
+bot = Bot(os.environ["TG_TOKEN"])
 
 async def main():
     await set_commands()
