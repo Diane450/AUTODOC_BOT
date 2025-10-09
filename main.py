@@ -10,7 +10,7 @@ from utils.Logger import logger
 import asyncio
 import os
 
-bot = Bot("7460551340:AAEG0NNuf_KiScgjuYOInEN34jCJ34zHr9k")
+bot = Bot(os.environ["TG_TOKEN"])
 dp = Dispatcher()
 
 async def main():
