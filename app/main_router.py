@@ -9,6 +9,8 @@ async def start_cmd(message:Message):
     await message.answer(
 """👋 Привет! Я бот для генерации документов.
 
+➡️ Вызови команду /generate
+
 📄 Загрузи шаблон Word с плейсхолдерами
 
 📊 Добавь таблицу Excel или Google Sheets с данными
@@ -24,6 +26,8 @@ async def help_cmd(message:Message):
     await message.answer(
 """
 📌 Как использовать бота для генерации документов:
+
+<b>Чтобы начать генерацию, необходимо вызвать команду /generate</b>
 
 1️⃣ <b>Шаблон документа</b>  
     📄 Поддерживается Word (.docx)  
