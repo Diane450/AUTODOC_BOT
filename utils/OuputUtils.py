@@ -44,7 +44,7 @@ class OutputUtils:
     def generate_documents(self, rows, headers, template_path):
         temp_files = []
         for row in rows:
-            context = dict(zip(headers, row))
+            context = {str(k).strip(): v for k, v in zip(headers, row)}
 
             template = output_file_utils.generate_one_document(context, template_path)
 
