@@ -9,6 +9,8 @@ class BotUtils:
             
             if output_type == "zip":
                 return "Ваши документы будут присланы в ZIP архиве"
+            elif output_type == "both":
+                return "Готовлю оба варианта!"
             return "Ваши документы будут присланы в едином файле"
     
 

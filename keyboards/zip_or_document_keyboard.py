@@ -1,6 +1,9 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-zip_or_document_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="🗂 ZIP архив", callback_data="output_zip"),
-    InlineKeyboardButton(text="📄 Один документ", callback_data="output_single")]
+zip_or_document_keyboard = InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text="🗂 ZIP архив", callback_data="output_zip"),
+        InlineKeyboardButton(text="📄 Один документ", callback_data="output_single")
+    ],[
+        InlineKeyboardButton(text="🗂 + 📄 Прислать оба варианта", callback_data="output_both")
+    ]
 ])

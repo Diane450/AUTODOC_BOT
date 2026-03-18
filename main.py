@@ -48,7 +48,7 @@ async def start_bot():
         except TelegramNetworkError as e:
             logger.error(f"⚠️ Network error: {e}. Retry in {retry_delay} sec...")
             await asyncio.sleep(retry_delay)
-            retry_delay = min(retry_delay * 2, 300)  # увеличиваем задержку до 5 минут макс
+            retry_delay = min(retry_delay * 2, 300)
         except Exception as e:
             logger.exception(f"❌ Unknown error: {e}. Retry in {retry_delay} sec...")
             await asyncio.sleep(retry_delay)
